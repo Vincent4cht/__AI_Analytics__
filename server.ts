@@ -8,7 +8,8 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT || 3000);
+  const isProduction = process.env.NODE_ENV === "production";
 
   // Middleware to support large transcripts
   app.use(express.json({ limit: "15mb" }));
@@ -19,13 +20,13 @@ async function startServer() {
     if (!aiClient) {
       const key = process.env.GEMINI_API_KEY;
       if (!key) {
-        throw new Error("找不到 GEMINI_API_KEY。請確認您已在 Settings > Secrets 綁定正確的金鑰。");
+        throw new Error("GEMINI_API_KEY 未設定。請在 .env 文件中設置您的 Gemini API 金鑰。");
       }
       aiClient = new GoogleGenAI({
         apiKey: key,
         httpOptions: {
           headers: {
-            "User-Agent": "aistudio-build",
+            "User-Agent": "ai-analytics-app",
           },
         },
       });
@@ -115,8 +116,8 @@ ${transcript}
     }
   });
 
-  // Serve Vit dev server or build files
-  if (process.env.NODE_ENV !== "production") {
+  // Serve Vite dev server or build files
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
